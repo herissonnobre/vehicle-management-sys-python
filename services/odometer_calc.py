@@ -38,9 +38,11 @@ def calculate_odometer_difference(original: Tire, replacement: Tire) -> dict:
 
     Returns:
         dict: A dictionary containing:
-            - difference_percentage (float): The percentage difference in diameter
-            - direction (str): Either 'underreports' or 'overreports'
-            - actual_distance_per_100km (float): The actual distance traveled per 100km shown on odometer
+            - original_diameter (float)
+            - replacement_diameter (float)
+            - difference_percentage (float)
+            - direction (str): 'underreports' or 'overreports'
+            - real_distance_per_100km (float)
     """
 
     original_diameter = calculate_total_diameter(original)
@@ -48,10 +50,12 @@ def calculate_odometer_difference(original: Tire, replacement: Tire) -> dict:
 
     difference_percentage = ((replacement_diameter - original_diameter) / original_diameter) * 100
     direction = 'underreports' if difference_percentage > 0 else 'overreports'
-    actual_distance_per_100km = 100 + difference_percentage
+    real_distance_per_100km  = 100 + difference_percentage
 
     return {
-        'difference_percentage': difference_percentage,
+        'original_diameter': original_diameter,
+        'replacement_diameter': replacement_diameter,
+        'difference_percentage': round(abs(difference_percentage), 2),
         'direction': direction,
-        'actual_distance_per_100km': actual_distance_per_100km,
+        'real_distance_per_100km': round(real_distance_per_100km, 2)
     }
