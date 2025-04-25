@@ -10,7 +10,7 @@ def read_refuels(file_path: str) -> list[RefuelRecord]:
         for row in reader:
             record = RefuelRecord(
                 date=row['date'],
-                odometer=int(row['odometer']),
+                odometer=int(float(row['odometer'])),
                 fuel_tipe=row['fuel_type'],
                 total_value=float(row['total_value']) if row['total_value'] else None,
                 price_per_liter=float(row['price_per_liter']) if row['price_per_liter'] else None,
