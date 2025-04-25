@@ -13,14 +13,4 @@ def show_main_menu():
 
         choice = input("Choose an option: ")
 
-        if choice == "1":
-            show_fuel_menu()
-        elif choice == "2":
-            show_tire_menu()
-        elif choice == "3":
-            show_vehicle_menu()
-        elif choice == "0":
-            print("Exiting system...")
-            break
-        else:
-            print("Invalid option. Please try again.")
+        return choice

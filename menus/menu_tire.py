@@ -22,6 +22,6 @@ def show_tire_menu():
         result = calculate_odometer_difference(original, replacement)
 
         print(f"\nOdometer {result['direction']} by {abs(result['difference_percentage']):.2f}%")
-        print(f"When odometer shows 100km, real distance is: {result['actual_distance_per_100km']:.2f} km")
+        print(f"When odometer shows 100km, real distance is: {result['real_distance_per_100km']:.2f} km")
     except ValueError:
         print("Invalid input. Please enter numbers only.")
