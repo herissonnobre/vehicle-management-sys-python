@@ -6,7 +6,7 @@ from typing import Optional
 class RefuelRecord:
     date: str
     odometer: int
-    fuel_tipe: str
+    fuel_type: str
     total_value: Optional[float] = None
     price_per_liter: Optional[float] = None
     liters: Optional[float] = None
