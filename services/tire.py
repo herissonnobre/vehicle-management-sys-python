@@ -1,36 +1,68 @@
 import csv
 
+from models.tire import Tire
+
 CSV_PATH = 'data/vehicle.csv'
 DEFAULT_PRESSURE = 32  # pressão original (em psi)
 
-def calculate_volume(width, aspect, rim):
-    # Aproximação do volume do pneu (não é o volume real, mas serve para cálculo proporcional)
-    return width * aspect * (rim * 25.4)  # rim em polegadas convertido para mm
 
-def calculate_adjusted_pressure(original_volume, current_volume, original_pressure=DEFAULT_PRESSURE):
+def calculate_volume(tire: Tire) -> float:
+    """
+    Estimate a proportional volume for a tire based on its dimensions.
+
+    Note: This is not the real physical volume, but a proportional value
+    useful for comparing relative pressure changes when changing tire sizes.
+
+    Args:
+        tire (Tire): A tire object with width, aspect ratio, and rim size.
+
+    Returns:
+        float: Estimated proportional volume.
+    """
+    return tire.width * tire.aspect_ratio * (tire.rim * 25.4)
+
+
+def calculate_adjusted_pressure(original_volume: float, current_volume: float,
+                                original_pressure: float = DEFAULT_PRESSURE) -> float:
+    """
+    Calculate the adjusted tire pressure based on volume change.
+
+    Args:
+        original_volume (float): Volume of the original tire.
+        current_volume (float): Volume of the current tire.
+        original_pressure (float): Original reference pressure (psi).
+
+    Returns:
+        float: Adjusted pressure (psi).
+    """
     return original_pressure * (original_volume / current_volume)
 
-def show_tires_pressure():
+
+def show_tire_pressure_adjustments():
+    """
+    Read vehicle and tire data from the CSV and display adjusted pressure suggestions
+    based on the new tire dimensions.
+    """
     with open(CSV_PATH, newline='', encoding='utf-8') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
-            # Extrai dados
-            original_width = int(row['original_width'])
-            original_aspect = int(row['original_aspect'])
-            original_rim = int(row['original_rim'])
+            original = Tire(
+                width=int(row['original_width']),
+                aspect_ratio=int(row['original_aspect']),
+                rim=int(row['original_rim'])
+            )
+            current = Tire(
+                width=int(row['current_width']),
+                aspect_ratio=int(row['current_aspect']),
+                rim=int(row['current_rim'])
+            )
 
-            current_width = int(row['current_width'])
-            current_aspect = int(row['current_aspect'])
-            current_rim = int(row['current_rim'])
-
-            # Calcula volumes
-            original_volume = calculate_volume(original_width, original_aspect, original_rim)
-            current_volume = calculate_volume(current_width, current_aspect, current_rim)
-
-            # Calcula nova pressão
+            original_volume = calculate_volume(original)
+            current_volume = calculate_volume(current)
             adjusted_pressure = calculate_adjusted_pressure(original_volume, current_volume)
 
-            print(f"Veículo: {row['brand']} {row['model']} {row['version']} ({row['plate']})")
-            print(f"Pressão original (estimada): {DEFAULT_PRESSURE} psi")
-            print(f"Pressão ajustada para nova medida: {adjusted_pressure:.1f} psi\n")
-
+            print("-" * 50)
+            print(f"Vehicle: {row['brand']} {row['model']} {row['version']} ({row['plate']})")
+            print(f"Original pressure estimate: {DEFAULT_PRESSURE} psi")
+            print(f"Adjusted pressure for current tires: {adjusted_pressure:.1f} psi")
+            print("-" * 50)

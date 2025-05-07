@@ -1,14 +1,14 @@
 def main() -> None:
     """Runs the vehicle management CLI menu."""
     from services.fueling import add_fueling, show_consumption
-    from services.odometer import show_odometer_difference
-    from services.tire import show_tires_pressure
+    from services.tire import show_tire_pressure_adjustments
+    from services.odometer import show_odometer_differences_from_file
 
     options = {
         "1": add_fueling,
         "2": show_consumption,
-        "3": show_odometer_difference,
-        "4": show_tires_pressure,
+        "3": show_odometer_differences_from_file,
+        "4": show_tire_pressure_adjustments,
     }
 
     try:

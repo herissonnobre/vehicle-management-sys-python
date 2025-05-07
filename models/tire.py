@@ -1,16 +1,12 @@
 """
-This module defines tire specifications used for vehicle odometer calculations.
+This module defines tire specifications used for vehicle odometer and pressure calculations.
 
-The module provides the Tire dataclass which represents standard tire measurements
-following conventional tire sizing notation. These measurements are essential for:
+It provides the Tire dataclass which represents conventional tire measurements. These are used for:
 
 1. Representing tire dimensions (width, aspect ratio, rim diameter)
-2. Calculating total tire diameter
-3. Determining odometer accuracy when changing tire sizes
-4. Computing actual distances traveled with non-standard tire sizes
-
-The tire specifications defined here are used by the odometer module to calculate
-how different tire sizes affect vehicle odometer readings and actual distances traveled.
+2. Calculating tire diameter and volume
+3. Estimating odometer reading differences
+4. Adjusting tire pressure when changing tire sizes
 """
 from dataclasses import dataclass
 
@@ -18,14 +14,13 @@ from dataclasses import dataclass
 @dataclass
 class Tire:
     """
-    A class representing a tire with standard tire sizing measurements.
+    A class representing a tire with standard sizing measurements.
 
     Attributes:
-        width (float): The tire's section width in millimeters
-        aspect_ratio (float): The tire's aspect ratio as a percentage (height/width)
-        rim (float): The wheel's diameter in inches
+        width (int): The tire's section width in millimeters.
+        aspect_ratio (int): The tire's aspect ratio as a percentage (height/width).
+        rim (int): The wheel's diameter in inches.
     """
-    width: float        # in mm
-    aspect_ratio: float # in percentage
-    rim: float          # in inches
-
+    width: int  # in mm
+    aspect_ratio: int  # in percentage
+    rim: int  # in inches

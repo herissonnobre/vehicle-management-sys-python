@@ -6,8 +6,12 @@ The module contains utilities to:
 - Determine how different tire sizes affect odometer readings
 - Calculate actual distances traveled when using non-standard tire sizes
 """
+import csv
 
+from models.odomoter_difference_result import OdometerDifferenceResult
 from models.tire import Tire
+
+CSV_PATH = 'data/vehicle.csv'
 
 
 def calculate_total_diameter(tire: Tire) -> float:
@@ -24,63 +28,75 @@ def calculate_total_diameter(tire: Tire) -> float:
     rim_in_mm = tire.rim * 25.4
     return 2 * sidewall_height + rim_in_mm
 
-def calculate_odometer_difference(original: Tire, replacement: Tire) -> dict:
-    """
-    Calculate the difference in odometer readings when replacing tires of different sizes.
 
-    This function compares the diameters of original and replacement tires to determine
-    how the odometer readings will be affected. A larger replacement tire will cause
-    the odometer to underreport distances, while a smaller one will cause it to overreport.
+def calculate_odometer_difference(original: Tire, replacement: Tire) -> OdometerDifferenceResult:
+    """
+    Compare original and replacement tire diameters to determine odometer discrepancy.
 
     Args:
-        original (Tire): The original tire specifications
-        replacement (Tire): The replacement tire specifications
+        original (Tire): The original tire.
+        replacement (Tire): The replacement tire.
 
     Returns:
-        dict: A dictionary containing:
-            - original_diameter (float)
-            - replacement_diameter (float)
-            - difference_percentage (float)
-            - direction (str): 'underreports' or 'overreports'
-            - real_distance_per_100km (float)
+        OdometerDifferenceResult: Object with detailed comparison results.
     """
-
     original_diameter = calculate_total_diameter(original)
     replacement_diameter = calculate_total_diameter(replacement)
 
     difference_percentage = ((replacement_diameter - original_diameter) / original_diameter) * 100
     direction = 'underreports' if difference_percentage > 0 else 'overreports'
-    real_distance_per_100km  = 100 + difference_percentage
+    real_distance_per_100km = 100 + difference_percentage
 
-    return {
-        'original_diameter': original_diameter,
-        'replacement_diameter': replacement_diameter,
-        'difference_percentage': round(abs(difference_percentage), 2),
-        'direction': direction,
-        'real_distance_per_100km': round(real_distance_per_100km, 2)
-    }
+    return OdometerDifferenceResult(
+        original_diameter=round(original_diameter, 2),
+        replacement_diameter=round(replacement_diameter, 2),
+        difference_percentage=round(abs(difference_percentage), 2),
+        direction=direction,
+        real_distance_per_100km=round(real_distance_per_100km, 2)
+    )
 
 
-def show_odometer_difference():
-    print("\n--- Tire Menu ---")
-    print("Compare original vs new tire to check odometer difference")
+def load_tires_from_csv(filepath: str = CSV_PATH) -> list[tuple[str, Tire, Tire]]:
+    """
+    Load tire data from a CSV file and create Tire objects for each vehicle.
 
-    try:
-        print("\nOriginal Tire")
-        width = int(input("Width (mm): "))
-        aspect_ratio = int(input("Aspect ratio (%): "))
-        rim = int(input("Rim (inches): "))
-        original = Tire(width=width, aspect_ratio=aspect_ratio, rim=rim)
+    Args:
+        filepath (str): Path to the CSV file.
 
-        print("\nReplacement Tire")
-        width = int(input("Width (mm): "))
-        aspect_ratio = int(input("Aspect ratio (%): "))
-        rim = int(input("Rim (inches): "))
-        replacement = Tire(width=width, aspect_ratio=aspect_ratio, rim=rim)
+    Returns:
+        list of tuple: Each tuple contains a label and two Tire objects (original and current).
+    """
+    vehicles = []
+    with open(filepath, newline='', encoding='utf-8') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            label = f"{row['brand']} {row['model']} {row['plate']} ({row['year']})"
+            original = Tire(
+                width=int(row['original_width']),
+                aspect_ratio=int(row['original_aspect']),
+                rim=int(row['original_rim'])
+            )
+            current = Tire(
+                width=int(row['current_width']),
+                aspect_ratio=int(row['current_aspect']),
+                rim=int(row['current_rim'])
+            )
+            vehicles.append((label, original, current))
+    return vehicles
 
-        result = calculate_odometer_difference(original, replacement)
 
-        print(f"\nOdometer {result['direction']} by {abs(result['difference_percentage']):.2f}%")
-        print(f"When odometer shows 100km, real distance is: {result['real_distance_per_100km']:.2f} km")
-    except ValueError:
-        print("Invalid input. Please enter numbers only.")
+def show_odometer_differences_from_file(filepath: str = CSV_PATH):
+    """
+    Print the odometer difference results for each vehicle listed in the CSV.
+
+    Args:
+        filepath (str): Path to the CSV file.
+    """
+    vehicles = load_tires_from_csv(filepath)
+
+    for label, original, current in vehicles:
+        result = calculate_odometer_difference(original, current)
+
+        print(f"\nVehicle: {label}")
+        print(f"Odometer {result.direction} by {result.difference_percentage:.2f}%")
+        print(f"When odometer shows 100km, real distance is: {result.real_distance_per_100km:.2f} km")
