@@ -35,7 +35,8 @@ def calculate_adjusted_pressure(original_volume: float, current_volume: float,
     Returns:
         float: Adjusted pressure (psi).
     """
-    return original_pressure * (original_volume / current_volume)
+    pressure = original_pressure * (original_volume / current_volume)
+    return round(pressure)
 
 
 def show_tire_pressure_adjustments():
@@ -64,5 +65,5 @@ def show_tire_pressure_adjustments():
             print("-" * 50)
             print(f"Vehicle: {row['brand']} {row['model']} {row['version']} ({row['plate']})")
             print(f"Original pressure estimate: {DEFAULT_PRESSURE} psi")
-            print(f"Adjusted pressure for current tires: {adjusted_pressure:.1f} psi")
+            print(f"Adjusted pressure for current tires: {adjusted_pressure} psi")
             print("-" * 50)
