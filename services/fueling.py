@@ -37,6 +37,7 @@ def read_refuels(file_path: str) -> list[RefuelRecord]:
             records.append(record)
     return records
 
+
 def write_refuels(file_path: str, records: list[RefuelRecord]):
     """
 
@@ -44,7 +45,7 @@ def write_refuels(file_path: str, records: list[RefuelRecord]):
     :param records:
     """
     with open(file_path, mode='w', newline='', encoding='utf-8') as csvfile:
-        fieldnames= ['date', 'odometer', 'fuel_type', 'total_value', 'price_per_liter', 'liters']
+        fieldnames = ['date', 'odometer', 'fuel_type', 'total_value', 'price_per_liter', 'liters']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         for r in records:
@@ -103,7 +104,7 @@ def add_fueling():
     print("Fueling added successfully!")
 
 
-def show_consumption() -> float:
+def show_consumption() -> None:
     """
 
     :return:
@@ -125,7 +126,10 @@ def show_consumption() -> float:
             total_km += km
             total_liters += curr.liters
 
-    if total_liters == 0:
-        return 0.0
+    avg_consumption = total_km / total_liters
 
-    return total_km / total_liters
+    if total_liters == 0:
+        avg_consumption = 0.00
+
+    print(f"Consumo médio: {avg_consumption:.2f} km/l")
+    return None
