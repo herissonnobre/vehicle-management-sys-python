@@ -114,9 +114,11 @@ def show_consumption(csv_path: str = CSV_PATH) -> None:
         curr = sorted_records[i]
         km = curr.odometer - prev.odometer
 
-        if km > 0 and curr.liters:
+        if 0 < km <= 1000 and curr.liters:
             total_km += km
             total_liters += curr.liters
+        elif km > 1000:
+            logging.info(f"Ignored interval: {prev.odometer} -> {curr.odometer} ({km} km)")
 
     if total_liters == 0:
         print("Not enough data to calculate average consumption.")
