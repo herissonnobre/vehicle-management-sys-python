@@ -4,13 +4,16 @@ Fuel service module for reading, writing and managing refueling records.
 import csv
 import logging
 from datetime import datetime
+from pathlib import Path
 
 from models.refuel import RefuelRecord
+from services.odometer import load_tires_from_csv, calculate_odometer_difference
 
-CSV_PATH = 'data/refuels.csv'
+CSV_PATH = Path("data/refuels.csv")
+MAX_INTERVAL_KM = 1000
 
 
-def read_refuels(file_path: str = CSV_PATH) -> list[RefuelRecord]:
+def read_refuels(file_path: str | Path = CSV_PATH) -> list[RefuelRecord]:
     """
     Reads refuel records from a CSV file and returns them as RefuelRecord objects.
     """
@@ -102,28 +105,67 @@ def show_consumption(csv_path: str = CSV_PATH) -> None:
     """
     Calculates and displays average fuel consumption (km/l).
     """
+    vehicles = load_tires_from_csv()
+    if not vehicles:
+        print("No tire data found to apply odometer correction.")
+        return
+
+    _, original_tire, current_tire = vehicles[0]
+    odometer_correction = calculate_odometer_difference(original_tire, current_tire)
+    correction_multiplier = odometer_correction.real_distance_per_100km / 100
+
     records = read_refuels(csv_path)
 
-    sorted_records = sorted([r for r in records if r.odometer and r.liters], key=lambda r: r.odometer)
+    fuel_types = sorted({r.fuel_type for r in records if r.fuel_type})
+
+    if not fuel_types:
+        print("No fuel types found in the records.")
+        return
+
+    print("Select a fuel type:")
+    print("0. All types")
+    for idx, ft in enumerate(fuel_types, start=1):
+        print(f"{idx}. {ft}")
+
+    try:
+        choice = int(input("Enter the corresponding number: "))
+        if choice == 0:
+            selected_fuel = None  # No filter
+        else:
+            selected_fuel = fuel_types[choice - 1]
+    except (ValueError, IndexError):
+        print("Invalid selection.")
+        return
+
+    filtered = [
+        r for r in records
+        if (selected_fuel is None or r.fuel_type == selected_fuel) and r.odometer and r.liters
+    ]
+
+    sorted_records = sorted(filtered, key=lambda r: r.odometer)
 
     total_km = 0.0
     total_liters = 0.0
 
-    for i in range(1, len(sorted_records)):
-        prev = sorted_records[i - 1]
+    for i in range(len(sorted_records) - 1):
         curr = sorted_records[i]
-        km = curr.odometer - prev.odometer
+        next_fueling = sorted_records[i + 1]
+        km = next_fueling.odometer - curr.odometer
 
-        if 0 < km <= 1000 and curr.liters:
+        if 0 < km <= MAX_INTERVAL_KM and curr.liters:
             total_km += km
             total_liters += curr.liters
         elif km > 1000:
-            logging.info(f"Ignored interval: {prev.odometer} -> {curr.odometer} ({km} km)")
+            logging.info(f"Ignored interval: {curr.odometer} -> {next_fueling.odometer} ({km} km)")
 
     if total_liters == 0:
         print("Not enough data to calculate average consumption.")
         return
 
-    avg_consumption = total_km / total_liters
+    corrected_km = total_km * correction_multiplier
 
-    print(f"Average consumption: {avg_consumption:.2f} km/l")
+    avg_consumption = corrected_km / total_liters
+
+    label = selected_fuel if selected_fuel else "all fuel types"
+
+    print(f"Average consumption for {label}: {avg_consumption:.2f} km/l")
