@@ -3,7 +3,7 @@ Fuel service module for reading, writing and managing refueling records.
 """
 import csv
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from models.refuel import RefuelRecord
@@ -40,7 +40,7 @@ def read_refuels(file_path: str | Path = CSV_PATH) -> list[RefuelRecord]:
     return records
 
 
-def write_refuels(file_path: str, records: list[RefuelRecord]) -> None:
+def write_refuels(file_path: str | Path, records: list[RefuelRecord]) -> None:
     """
     Writes a list of RefuelRecord objects to a CSV file.
     """
@@ -59,7 +59,7 @@ def write_refuels(file_path: str, records: list[RefuelRecord]) -> None:
             })
 
 
-def add_fueling(csv_path: str = CSV_PATH) -> None:
+def add_fueling() -> None:
     """
     Prompts the user for fueling information and stores it in the CSV.
     """
@@ -92,7 +92,7 @@ def add_fueling(csv_path: str = CSV_PATH) -> None:
 
         record.complete_data()
 
-        records = read_refuels(CSV_PATH)
+        records = read_refuels()
         records.append(record)
         write_refuels(CSV_PATH, records)
 
@@ -122,6 +122,37 @@ def show_consumption(csv_path: str = CSV_PATH) -> None:
         print("No fuel types found in the records.")
         return
 
+    print("Select a period:")
+    print("0. All time")
+    print("1. Last 7 days")
+    print("2. Last 15 days")
+    print("3. Last 30 days")
+    print("4. Last 90 days (quarter)")
+    print("5. Last 180 days (semester)")
+    print("6. Last 365 days (year)")
+
+    try:
+        period_choice = int(input("Enter the corresponding number: "))
+    except ValueError:
+        print("Invalid period selection.")
+        return
+
+    today = datetime.today()
+    date_threshold = None
+
+    if period_choice == 1:
+        date_threshold = today - timedelta(days=7)
+    elif period_choice == 2:
+        date_threshold = today - timedelta(days=15)
+    elif period_choice == 3:
+        date_threshold = today - timedelta(days=30)
+    elif period_choice == 4:
+        date_threshold = today - timedelta(days=90)
+    elif period_choice == 5:
+        date_threshold = today - timedelta(days=180)
+    elif period_choice == 6:
+        date_threshold = today - timedelta(days=365)
+
     print("Select a fuel type:")
     print("0. All types")
     for idx, ft in enumerate(fuel_types, start=1):
@@ -139,7 +170,9 @@ def show_consumption(csv_path: str = CSV_PATH) -> None:
 
     filtered = [
         r for r in records
-        if (selected_fuel is None or r.fuel_type == selected_fuel) and r.odometer and r.liters
+        if (selected_fuel is None or r.fuel_type == selected_fuel)
+           and r.odometer and r.liters
+           and (not date_threshold or datetime.strptime(r.date, "%Y-%m-%d") >= date_threshold)
     ]
 
     sorted_records = sorted(filtered, key=lambda r: r.odometer)
@@ -166,6 +199,18 @@ def show_consumption(csv_path: str = CSV_PATH) -> None:
 
     avg_consumption = corrected_km / total_liters
 
-    label = selected_fuel if selected_fuel else "all fuel types"
+    period_labels = {
+        0: "all time",
+        1: "last 7 days",
+        2: "last 15 days",
+        3: "last 30 days",
+        4: "last 90 days",
+        5: "last 180 days",
+        6: "last 365 days",
+    }
 
-    print(f"Average consumption for {label}: {avg_consumption:.2f} km/l")
+    fuel_label = selected_fuel if selected_fuel else "all fuel types"
+
+    period_label = period_labels.get(period_choice, "custom period")
+
+    print(f"Average consumption for {fuel_label} ({period_label}): {avg_consumption:.2f} km/l")
