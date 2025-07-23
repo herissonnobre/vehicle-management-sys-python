@@ -6,11 +6,47 @@ import logging
 from datetime import datetime, timedelta
 from pathlib import Path
 
+from PyQt6.QtWidgets import QDialogButtonBox, QLineEdit, QFormLayout, QVBoxLayout, QMessageBox, QDialog
+
 from models.refuel import RefuelRecord
 from services.odometer import load_tires_from_csv, calculate_odometer_difference
 
 CSV_PATH = Path("data/refuels.csv")
 MAX_INTERVAL_KM = 1000
+
+
+class AddFuelingDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Register Refueling")
+
+        layout = QVBoxLayout()
+        form_layout = QFormLayout()
+
+        # Campos de entrada
+        self.date_input = QLineEdit()
+        self.odometer_input = QLineEdit()
+        self.fuel_type_input = QLineEdit()
+        self.total_value_input = QLineEdit()
+        self.price_per_liter_input = QLineEdit()
+        self.liters_input = QLineEdit()
+
+        form_layout.addRow("Date (YYYY-MM-DD):", self.date_input)
+        form_layout.addRow("Odometer (km):", self.odometer_input)
+        form_layout.addRow("Fuel type:", self.fuel_type_input)
+        form_layout.addRow("Total value:", self.total_value_input)
+        form_layout.addRow("Price per liter:", self.price_per_liter_input)
+        form_layout.addRow("Liters:", self.liters_input)
+
+        layout.addLayout(form_layout)
+
+        # Botões OK / Cancelar
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons.accepted.connect(self.save_data)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
+
+        self.setLayout(layout)
 
 
 def read_refuels(file_path: str | Path = CSV_PATH) -> list[RefuelRecord]:
@@ -99,6 +135,28 @@ def add_fueling() -> None:
         print("Fueling added successfully!")
     except ValueError as e:
         print(f"Invalid input: {e}. Please try again.")
+
+    def save_data(self):
+        try:
+            record = RefuelRecord(
+                date=self.date_input.text(),
+                odometer=int(self.odometer_input.text()),
+                fuel_type=self.fuel_type_input.text(),
+                total_value=float(self.total_value_input.text()) if self.total_value_input.text() else None,
+                price_per_liter=float(self.price_per_liter_input.text()) if self.price_per_liter_input.text() else None,
+                liters=float(self.liters_input.text()) if self.liters_input.text() else None
+            )
+            record.complete_data()
+
+            records = read_refuels()
+            records.append(record)
+            write_refuels(CSV_PATH, records)
+
+            QMessageBox.information(self, "Success", "Fueling registered successfully.")
+            self.accept()
+
+        except ValueError as e:
+            QMessageBox.critical(self, "Invalid Input", f"Please check the values: {e}")
 
 
 def show_consumption(csv_path: str = CSV_PATH) -> None:
