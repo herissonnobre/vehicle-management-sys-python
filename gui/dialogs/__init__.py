@@ -1,0 +1,4 @@
+from .add_refuel_dialog import AddRefuelDialog
+from .show_consumption_dialog import ShowConsumptionDialog
+from .show_odometer_dialog import ShowOdometerDialog
+from .show_tire_pressure_dialog import ShowTirePressureDialog
