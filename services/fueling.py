@@ -93,6 +93,7 @@ def write_refuels(file_path: str | Path, records: list[RefuelRecord]) -> None:
                 'price_per_liter': f'{r.price_per_liter:.2f}' if r.price_per_liter is not None else '',
                 'liters': f'{r.liters:.2f}' if r.liters is not None else '',
             })
+        csvfile.flush()
 
 
 def add_fueling() -> None:
